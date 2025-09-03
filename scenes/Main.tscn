@@ -1,0 +1,40 @@
+[gd_scene load_steps=4 format=3 uid="uid://b1n2d3e4f5g6"]
+
+[ext_resource type="Script" path="res://src/Main.cs" id="1_main"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(1920, 1080)
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_1"]
+bounce = 0.8
+friction = 0.1
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main")
+
+[node name="Background" type="ColorRect" parent="."]
+modulate = Color(1, 1, 1, 0)
+mouse_filter = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PhysicsArea" type="Area2D" parent="."]
+collision_layer = 2
+collision_mask = 0
+mouse_filter = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PhysicsArea"]
+shape = SubResource("RectangleShape2D_1")
+
+[node name="ShuttlecockContainer" type="Node2D" parent="."]
+
+[node name="DesktopBoundary" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 0
+physics_material_override = SubResource("PhysicsMaterial_1")
+
+[node name="ScreenEdges" type="CollisionPolygon2D" parent="DesktopBoundary"]
+polygon = PackedVector2Array(0, 0, 1920, 0, 1920, 1080, 0, 1080)

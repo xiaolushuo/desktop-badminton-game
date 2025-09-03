@@ -1,0 +1,64 @@
+[gd_scene load_steps=6 format=3 uid="uid://s1h2t3u4v5w6"]
+
+[ext_resource type="Script" path="res://src/Shuttlecock.cs" id="1_shuttlecock"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_shuttlecock"]
+bounce = 0.3
+friction = 0.2
+rough = true
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
+radius = 15.0
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_feathers"]
+height = 40.0
+radius = 8.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wings"]
+size = Vector2(30, 8)
+
+[node name="Shuttlecock" type="RigidBody2D" node_paths=PackedStringArray("BodyShape", "FeatherShape", "WingShape")]
+collision_layer = 1
+collision_mask = 1
+mass = 0.005
+gravity_scale = 1.0
+physics_material_override = SubResource("PhysicsMaterial_shuttlecock")
+script = ExtResource("1_shuttlecock")
+BodyShape = NodePath("BodyCollision")
+FeatherShape = NodePath("FeatherCollision")
+WingShape = NodePath("WingCollision")
+
+[node name="Body" type="Sprite2D" parent="."]
+position = Vector2(0, 5)
+scale = Vector2(0.8, 0.8)
+texture = preload("res://assets/shuttlecock_body.png")
+
+[node name="Feathers" type="Sprite2D" parent="."]
+position = Vector2(0, -15)
+scale = Vector2(0.6, 0.6)
+texture = preload("res://assets/shuttlecock_feathers.png")
+
+[node name="BodyCollision" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_body")
+
+[node name="FeatherCollision" type="CollisionShape2D" parent="."]
+position = Vector2(0, -15)
+shape = SubResource("CapsuleShape2D_feathers")
+
+[node name="WingCollision" type="CollisionShape2D" parent="."]
+rotation = 1.5708
+shape = SubResource("RectangleShape2D_wings")
+
+[node name="Trail" type="Line2D" parent="."]
+width = 2.0
+default_color = Color(1, 1, 1, 0.3)
+texture = preload("res://assets/trail.png")
+texture_mode = 1
+
+[node name="InteractionArea" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 0
+mouse_filter = 2
+
+[node name="InteractionCollision" type="CollisionShape2D" parent="InteractionArea"]
+shape = SubResource("CircleShape2D_body")
