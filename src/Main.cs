@@ -7,6 +7,8 @@ public partial class Main : Node2D
 {
     private PackedScene _shuttlecockScene;
     private Shuttlecock _currentShuttlecock;
+    private TrajectoryPredictor _trajectoryPredictor;
+    private ModeUI _modeUI;
     private bool _isDragging = false;
     private Vector2 _dragOffset;
     private Vector2 _dragStartPos;
@@ -18,6 +20,9 @@ public partial class Main : Node2D
     [Export] public float Gravity = 980.0f;
     [Export] public float AirResistance = 0.99f;
     [Export] public float BounceDamping = 0.7f;
+    
+    [ExportGroup("Mode Settings")]
+    [Export] public bool StartInEasyMode = false;
 
     public override void _Ready()
     {
@@ -26,14 +31,30 @@ public partial class Main : Node2D
         // 设置窗口属性
         SetupWindow();
         
+        // 初始化游戏模式
+        InitializeGameMode();
+        
         // 加载羽毛球场景
         _shuttlecockScene = ResourceLoader.Load<PackedScene>("res://objects/Shuttlecock.tscn");
+        
+        // 创建轨迹预测器
+        _trajectoryPredictor = new TrajectoryPredictor();
+        _trajectoryPredictor.Gravity = Gravity;
+        _trajectoryPredictor.AirResistance = AirResistance;
+        AddChild(_trajectoryPredictor);
+        
+        // 创建模式UI
+        _modeUI = new ModeUI();
+        AddChild(_modeUI);
         
         // 创建第一个羽毛球
         SpawnShuttlecock();
         
         // 连接输入信号
         Input.Singleton.Connect("gui_input", new Callable(this, nameof(OnGuiInput)));
+        
+        // 显示初始模式UI
+        _modeUI.ShowUI();
     }
 
     private void SetupWindow()
@@ -51,6 +72,21 @@ public partial class Main : Node2D
         
         // 设置背景透明
         GetNode<ColorRect>("Background").Color = new Color(0, 0, 0, 0);
+    }
+
+    private void InitializeGameMode()
+    {
+        // 根据设置初始化游戏模式
+        if (StartInEasyMode)
+        {
+            GameMode.SetDifficulty(GameDifficulty.Easy);
+        }
+        else
+        {
+            GameMode.SetDifficulty(GameDifficulty.Hard);
+        }
+        
+        GD.Print($"游戏初始化完成，当前模式: {GameMode.GetDifficultyName()}");
     }
 
     private void SpawnShuttlecock()
@@ -117,6 +153,9 @@ public partial class Main : Node2D
         
         // 设置鼠标穿透为false，以便捕获鼠标事件
         _currentShuttlecock.MouseFilter = MouseFilterEnum.Stop;
+        
+        // 隐藏轨迹预测
+        _trajectoryPredictor.HideTrajectory();
     }
 
     private void UpdateDragging(Vector2 mousePos)
@@ -142,6 +181,13 @@ public partial class Main : Node2D
             {
                 _dragVelocity = (targetPos - _dragStartPos) / (float)deltaTime;
             }
+            
+            // 在简单模式下显示轨迹预测
+            if (GameMode.IsEasyMode())
+            {
+                var predictedVelocity = _dragVelocity * ThrowMultiplier;
+                _trajectoryPredictor.UpdateTrajectory(targetPos, predictedVelocity);
+            }
         }
     }
 
@@ -163,6 +209,9 @@ public partial class Main : Node2D
             
             // 恢复鼠标穿透
             _currentShuttlecock.MouseFilter = MouseFilterEnum.Pass;
+            
+            // 隐藏轨迹预测
+            _trajectoryPredictor.HideTrajectory();
             
             // 播放投掷音效（如果有）
             PlayThrowSound();
@@ -238,6 +287,29 @@ public partial class Main : Node2D
             else if (keyEvent.Keycode == Key.Escape && keyEvent.IsPressed())
             {
                 GetTree().Quit();
+            }
+            else if (keyEvent.Keycode == Key.M && keyEvent.IsPressed())
+            {
+                // 切换模式UI显示
+                _modeUI.ToggleUI();
+            }
+            else if (keyEvent.Keycode == Key.Tab && keyEvent.IsPressed())
+            {
+                // 切换游戏模式
+                GameMode.ToggleDifficulty();
+                _modeUI.UpdateModeDisplay();
+                
+                // 如果正在拖拽，更新轨迹预测
+                if (_isDragging && GameMode.IsEasyMode())
+                {
+                    var targetPos = _currentShuttlecock.GlobalPosition;
+                    var predictedVelocity = _dragVelocity * ThrowMultiplier;
+                    _trajectoryPredictor.UpdateTrajectory(targetPos, predictedVelocity);
+                }
+                else if (!GameMode.IsEasyMode())
+                {
+                    _trajectoryPredictor.HideTrajectory();
+                }
             }
         }
     }
